@@ -3,90 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DFU AI Diagnostic</title>
+    <title>DFU Intelligent Analysis</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        body { background-color: #f8f9fa; }
-        .result-card { border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .img-preview { max-height: 300px; object-fit: contain; border-radius: 8px; }
-        .progress { height: 25px; font-size: 0.9rem; }
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', system-ui, sans-serif; }
+        .hero-section { background: linear-gradient(135deg, #0d6efd, #0a58ca); color: white; padding: 40px 0; margin-bottom: 30px; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .img-preview { width: 100%; height: 220px; object-fit: contain; background: #000; border-radius: 8px; }
+        .metric-box { background: #f8f9fa; border-radius: 8px; padding: 15px; text-align: center; border: 1px solid #e9ecef; }
+        .metric-val { font-size: 1.4rem; font-weight: 700; color: #0d6efd; }
+        .metric-lbl { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; }
+        .report-box { background-color: #ffffeb; border-left: 5px solid #ffc107; padding: 20px; }
+        .xai-label { font-size: 0.85rem; font-weight: 600; margin-top: 8px; color: #495057; }
     </style>
 </head>
 <body>
 
-<div class="container py-5">
-    <div class="text-center mb-5">
-        <h1 class="display-5 fw-bold text-primary">🩺 DFU Classifier AI</h1>
-        <p class="lead text-muted">EfficientNetB3 + Transformer Model</p>
+<div class="hero-section text-center">
+    <div class="container">
+        <h1 class="fw-bold">🩺 DFU Intelligent Analysis</h1>
+        <p class="lead mb-0">Computer Vision + Segmentation + LIME + GenAI</p>
     </div>
+</div>
 
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            
-            <div class="card result-card mb-4">
-                <div class="card-body text-center p-5">
+<div class="container pb-5">
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-white fw-bold py-3">1. Patient Input</div>
+                <div class="card-body">
                     <form method="POST" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label for="fileUpload" class="form-label h5">Upload Foot Image</label>
-                            <input class="form-control form-control-lg" type="file" id="fileUpload" name="file" accept="image/*" required>
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Upload Wound Image</label>
+                            <input class="form-control" type="file" name="file" accept="image/*" required>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-lg px-5 mt-3">Analyze Image</button>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold mb-2">Symptoms (Check all that apply)</label>
+                            <div class="row g-2">
+                                <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="redness" value="Yes" id="s1"><label class="form-check-label" for="s1">Redness</label></div></div>
+                                <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="swelling" value="Yes" id="s2"><label class="form-check-label" for="s2">Swelling</label></div></div>
+                                <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="odor" value="Yes" id="s3"><label class="form-check-label" for="s3">Foul Odor</label></div></div>
+                                <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="pain" value="Yes" id="s4"><label class="form-check-label" for="s4">High Pain</label></div></div>
+                                <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="discharge" value="Yes" id="s5"><label class="form-check-label" for="s5">Pus/Fluid</label></div></div>
+                                <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="fever" value="Yes" id="s6"><label class="form-check-label" for="s6">Fever</label></div></div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Run Full Analysis</button>
                     </form>
                     
                     {% if error %}
-                    <div class="alert alert-danger mt-3">{{ error }}</div>
+                    <div class="alert alert-danger mt-3 small">{{ error }}</div>
                     {% endif %}
                 </div>
             </div>
-
-            {% if prediction %}
-            <div class="card result-card">
-                <div class="card-header bg-white text-center py-3">
-                    <h3 class="mb-0">Analysis Result</h3>
-                </div>
+            
+            {% if metrics %}
+            <div class="card">
+                <div class="card-header bg-white fw-bold py-3">2. Quantitative Metrics</div>
                 <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-6 text-center mb-3 mb-md-0">
-                            <img src="data:image/png;base64,{{ img_data }}" class="img-fluid img-preview border">
-                        </div>
-
-                        <div class="col-md-6">
-                            {% if prediction == 'None' %}
-                                <div class="alert alert-success text-center">
-                                    <h4 class="alert-heading fw-bold">No Pathology Detected</h4>
-                                    <p class="mb-0">Class: <strong>None</strong></p>
-                                </div>
-                            {% else %}
-                                <div class="alert alert-danger text-center">
-                                    <h4 class="alert-heading fw-bold">Pathology Detected</h4>
-                                    <p class="mb-0">Class: <strong>{{ prediction }}</strong></p>
-                                </div>
-                            {% endif %}
-                            
-                            <h5 class="text-center mb-3">Confidence: {{ confidence }}%</h5>
-
-                            <hr>
-                            <p class="text-muted small mb-2">Class Probabilities:</p>
-                            {% for cls, score in probs.items() %}
-                            <div class="mb-2">
-                                <div class="d-flex justify-content-between small">
-                                    <span>{{ cls }}</span>
-                                    <span>{{ score }}%</span>
-                                </div>
-                                <div class="progress">
-                                    <div class="progress-bar {% if cls == prediction %}bg-primary{% else %}bg-secondary opacity-25{% endif %}" 
-                                         role="progressbar" 
-                                         style="width: {{ score }}%">
-                                    </div>
-                                </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="metric-box">
+                                <div class="metric-val">{{ metrics['Wound Area'] }}</div>
+                                <div class="metric-lbl">Area</div>
                             </div>
-                            {% endfor %}
+                        </div>
+                        <div class="col-6">
+                            <div class="metric-box">
+                                <div class="metric-val">{{ metrics['Max Width'] }}</div>
+                                <div class="metric-lbl">Width</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             {% endif %}
+        </div>
 
+        <div class="col-lg-8">
+            {% if prediction %}
+            
+            <div class="card">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <div>
+                        <h5 class="text-muted mb-1">Primary Classification</h5>
+                        {% if prediction == 'None' %}
+                            <h2 class="text-success fw-bold mb-0">Healthy / No DFU</h2>
+                        {% else %}
+                            <h2 class="text-danger fw-bold mb-0">{{ prediction }}</h2>
+                        {% endif %}
+                    </div>
+                    <div class="text-end">
+                        <div class="display-6 fw-bold text-primary">{{ confidence }}%</div>
+                        <small class="text-muted">Confidence Score</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-white fw-bold py-3">3. Visual Diagnostics (Computer Vision)</div>
+                <div class="card-body">
+                    <div class="row text-center g-3">
+                        <div class="col-md-3 col-6">
+                            <img src="data:image/png;base64,{{ img_data }}" class="img-preview">
+                            <div class="xai-label">Original</div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            {% if seg_data %}
+                            <img src="data:image/png;base64,{{ seg_data }}" class="img-preview border">
+                            <div class="xai-label text-success">Segmentation Mask</div>
+                            {% else %}<div class="img-preview bg-light pt-5">N/A</div>{% endif %}
+                        </div>
+                        <div class="col-md-3 col-6">
+                            {% if gradcam_data %}
+                            <img src="data:image/png;base64,{{ gradcam_data }}" class="img-preview">
+                            <div class="xai-label text-danger">Grad-CAM (Focus)</div>
+                            {% else %}<div class="img-preview bg-light pt-5">N/A</div>{% endif %}
+                        </div>
+                        <div class="col-md-3 col-6">
+                            {% if lime_data %}
+                            <img src="data:image/png;base64,{{ lime_data }}" class="img-preview">
+                            <div class="xai-label text-warning">LIME (Explanations)</div>
+                            {% else %}<div class="img-preview bg-light pt-5">N/A</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between">
+                    <span>4. AI Generated Medical Summary (Llama 3)</span>
+                    <span class="badge bg-warning text-dark">Beta</span>
+                </div>
+                <div class="card-body">
+                    <div id="llm-output" class="report-box">
+                        {{ llm_report }}
+                    </div>
+                    <script>
+                        document.getElementById('llm-output').innerHTML = marked.parse(`{{ llm_report }}`);
+                    </script>
+                </div>
+            </div>
+            
+            {% else %}
+            <div class="card h-100 d-flex align-items-center justify-content-center text-center p-5 text-muted">
+                <div>
+                    <h1 style="font-size: 4rem;">🩺</h1>
+                    <h3>Ready for Analysis</h3>
+                    <p>Upload an image and select symptoms to begin.</p>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
