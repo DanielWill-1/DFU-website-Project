@@ -1,3 +1,4 @@
+#main application file for diabetic foot ulcer analysis web app
 import base64
 import io
 import os
@@ -223,7 +224,7 @@ def index():
             context['error'] = "Classifier model not loaded. Check TF_MODEL_PATH."
             print("❌ TensorFlow model not loaded")
             return render_template('indexb.html', **context)
-        
+    
         try:
             print("🔄 Processing image...")
             # --- PREPROCESSING ---
